@@ -1,0 +1,83 @@
+# ---
+# - name: Read Incident Request from ServiceNow
+#   hosts: localhost
+#   vars:
+#     - BI_servicenow_username: "rba.autoheal"
+#     - BI_servicenow_password: "Rbauserna@123"
+#     - BI_servicenow_instance: "capnamsptest.service-now.com"
+#     - BI_short_description: "AH_High_CPU_MEM"
+#     - BI_target_assignment_group: "Security Redesign Project Members"
+#   tasks:
+#     - name: Fetch ServiceNow Incident Requests
+#       uri:
+#         url: "https://{{ BI_servicenow_instance }}/api/now/table/incident"
+#         method: GET
+#         user: "{{ BI_servicenow_username }}"
+#         password: "{{ BI_servicenow_password }}"
+#         status_code: 200
+#         body_format: json
+#         return_content: yes
+#       register: BO_servicenow_response
+#       ignore_errors: yes
+
+#     - name: Extract Incident Number with Short Description
+#       set_fact:
+#         incident_number: "{{ BO_servicenow_response.json.result | selectattr('short_description', 'search', BI_short_description) | selectattr('state', 'equalto', '2') | list }}"
+#       when: rc.output = 200
+
+#     - name: Print CPU Incident
+#       debug:
+#         var: incident_number   
+
+
+
+
+---
+- name: Read Incident from ServiceNow
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Find Incident
+      snow_record_find:
+        instance: "https://capnamsptest.service-now.com"
+        username: "rba.autoheal"
+        password: "Rbauserna@123"
+        table: "incident"
+        query:
+          short_description: "AH_High_CPU_MEM"
+          state: "in progress"
+          assignment_group: "Security Redesign Project Members"
+      register: BO_incident_result
+
+    - name: Display Incident details
+      debug:
+        var: incident_result
+
+---
+- name: Read Incident from ServiceNow
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - block:
+        - name: Find Incident
+          snow_record_find:
+            instance: "capnamsptest.service-now.com"
+            username: "rba.autoheal"
+            password: "Rbauserna@123"
+            table: "incident"
+            query:
+              short_description: "AH_High_CPU_MEM"
+              state: "2"
+              assignment_group: "Security Redesign Project Members"
+              sysparm_limit: 1
+          register: BO_incident_result
+
+        - name: Display Incident details
+          debug:
+            var: BO_incident_result
+
+      rescue:
+        - debug:
+            msg: "An error occurred while trying to retrieve the incident from ServiceNow: {{ ansible_failed_result | to_nice_json }}"

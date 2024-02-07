@@ -1,0 +1,21 @@
+---
+- name: Update Work Notes of Incident
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Update Work Notes
+      servicenow.servicenow.snow_record:
+        instance: "capnamsptest.service-now.com"
+        username: "rba.autoheal"
+        password: "Rbauserna@123"
+        table: "incident"
+        number: "INC2388739"
+        data:
+          state: 2
+          work_notes: "Memory is high"
+      register: update_result
+
+    - name: Display Update Result
+      debug:
+        var: update_result
